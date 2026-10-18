@@ -1,0 +1,12 @@
+{
+  "name": "Pixel & Paws",
+  "short_name": "Pixel & Paws",
+  "description": "Report strays, find lost pets and coordinate rescues with AI triage.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F4F6F3",
+  "theme_color": "#0F6B5C",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
