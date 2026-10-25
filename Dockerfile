@@ -1,29 +1,12 @@
-# Build and run the Pixel & Paws frontend on Cloud Run
+# === STAGE 1: Build Stage ===
 FROM node:20-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# NEXT_PUBLIC_* values are baked in at build time from .env.production
-RUN npm run build
 
-FROM node:20-alpine
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/.next/standalone ./
-COPY --from=build /app/.next/static ./.next/static
-COPY --from=build /app/public ./public
-ENV PORT=8080
-ENV HOSTNAME="0.0.0.0" 
-EXPOSE 8080
-CMD ["node", "server.js"]
-
-# Accept the API URL as a build argument
+# ─── CHANGED: Environment Variable Block moved up here ───
 ARG NEXT_PUBLIC_API_BASE_URL
-# Expose it to the Next.js build process
-ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
-
-# 1. Declare the build arguments for Firebase & API
 ARG NEXT_PUBLIC_API_URL
 ARG NEXT_PUBLIC_FIREBASE_API_KEY
 ARG NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
@@ -31,12 +14,27 @@ ARG NEXT_PUBLIC_FIREBASE_PROJECT_ID
 ARG NEXT_PUBLIC_FIREBASE_APP_ID
 ARG NEXT_PUBLIC_AUTH_ENABLED
 
-# 2. Expose them as environment variables to the Next.js compiler
+ENV NEXT_PUBLIC_API_BASE_URL=$NEXT_PUBLIC_API_BASE_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV NEXT_PUBLIC_FIREBASE_API_KEY=$NEXT_PUBLIC_FIREBASE_API_KEY
 ENV NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=$NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
 ENV NEXT_PUBLIC_FIREBASE_PROJECT_ID=$NEXT_PUBLIC_FIREBASE_PROJECT_ID
 ENV NEXT_PUBLIC_FIREBASE_APP_ID=$NEXT_PUBLIC_FIREBASE_APP_ID
 ENV NEXT_PUBLIC_AUTH_ENABLED=$NEXT_PUBLIC_AUTH_ENABLED
+# ────────────────────────────────────────────────────────
 
 RUN npm run build
+
+# === STAGE 2: Runner Stage ===
+FROM node:20-alpine
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=build /app/.next/standalone ./
+COPY --from=build /app/.next/static ./.next/static
+COPY --from=build /app/public ./public
+
+ENV PORT=8080
+ENV HOSTNAME="0.0.0.0" 
+EXPOSE 8080
+CMD ["node", "server.js"]
